@@ -58,13 +58,15 @@ public class Uncompress {
 			while((len = gzis.read(buffer, 0, 512)) > 0 ){
 				
 				int offset = 0;
+				
 				//total file size smaller than 512 --> ignore it
 				while(total < 512){	
+			
 					System.out.println("ignoreing small page sizes");
 					//change offset to write from buffer
 					offset = (offset + total)%512;
 					//change now to 0
-					now = 0;
+					now = 512;
 					//get the next total
 					total = index_it.next().content_length;
 					if((total+offset) > 512 && total < 512)
@@ -96,8 +98,8 @@ public class Uncompress {
 					total = index_it.next().content_length;
 				}
 				else {
-					out.write(buffer, 0, len-1);
-					now = now + len;
+					out.write(buffer, offset, len-offset);
+					now = now + len-offset;
 				}
 				
 				
