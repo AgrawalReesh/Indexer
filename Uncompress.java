@@ -4,7 +4,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.zip.GZIPInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -40,7 +43,7 @@ public class Uncompress {
 				indexArray.add(new IndexEntry(index_str));
 			}
 			br.close();
-			
+			Iterator<IndexEntry> index_it = indexArray.iterator();
 			
 			
 			/* uncompress gzip file*/
@@ -49,23 +52,54 @@ public class Uncompress {
 			FileOutputStream out = new FileOutputStream("file1.txt", false);
 			int len;
 			int now = 0;   			//controlling amount of file read
-			int total = 12786;		//should not exceed more than this
-			while((len = gzis.read(buffer, 0, 512)) > 0 && now < total){
+			int total = index_it.next().content_length;		//should not exceed more than this
+			
+			int console_count = 0; //delete this 
+			while((len = gzis.read(buffer, 0, 512)) > 0 ){
+				
+				int offset = 0;
+				//total file size smaller than 512 --> ignore it
+				while(total < 512){	
+					System.out.println("ignoreing small page sizes");
+					//change offset to write from buffer
+					offset = (offset + total)%512;
+					//change now to 0
+					now = 0;
+					//get the next total
+					total = index_it.next().content_length;
+					if((total+offset) > 512 && total < 512)
+						len = gzis.read(buffer, 0, 512);
+					
+				}
 				
 				//end of file reached
 				if (total-now < len){
+					//copy reamining byte array
+					byte[] temp = Arrays.copyOfRange(buffer, total-now, len);
 					out.write(buffer, 0, total-now);
+					
 					//call parser with the current file
 					PageParser pp = new PageParser("file1.txt");
-					System.out.println(pp.getString());
+					System.out.println(++console_count + ")" + pp.getString());
+					System.out.println();
+					
 					//truncate file
+					FileWriter f_truncate = new FileWriter("file1.txt");
+					f_truncate.write("");
+					f_truncate.close();
+					
 					//add remaining buffer
+					out.write(temp, 0, temp.length);
+					
 					//initialize now to size of remaining buffer and total to next size
+					now = len - (total - now);
+					total = index_it.next().content_length;
 				}
 				else {
-					out.write(buffer, 0, len);
+					out.write(buffer, 0, len-1);
+					now = now + len;
 				}
-				now = now + len;
+				
 				
 			}
 			
