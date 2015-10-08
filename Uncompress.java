@@ -62,7 +62,7 @@ public class Uncompress {
 				//total file size smaller than 512 --> ignore it
 				while(total < 512){	
 			
-					System.out.println("ignoreing small page sizes");
+					System.out.println("ignoring small page sizes");
 					//change offset to write from buffer
 					offset = (offset + total)%512;
 					//change now to 0
@@ -76,13 +76,16 @@ public class Uncompress {
 				
 				//end of file reached
 				if (total-now < len){
-					//copy reamining byte array
+					//copy remaining byte array
 					byte[] temp = Arrays.copyOfRange(buffer, total-now, len);
 					out.write(buffer, 0, total-now);
 					
 					//call parser with the current file
 					PageParser pp = new PageParser("file1.txt");
 					System.out.println(++console_count + ")" + pp.getString());
+					
+					//write word count for the page in an intermediate file
+					PageWordCount.writeWordCount(pp.getString(), console_count);
 					System.out.println();
 					
 					//truncate file
